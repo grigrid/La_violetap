@@ -1,0 +1,89 @@
+---
+title: 'Aprendizaje supervisado: clasificación (vino)'
+author: "Ingrid Baulés"
+date: '2022-06-16'
+output: html_document
+---
+
+```{r setup, include=FALSE,message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Librerias
+```{r, message=FALSE}
+library(HDclassif)
+library(dplyr)
+library(rminer)
+library(mlbench)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(ggcorrplot)
+library(heatmaply)
+library(ggplot2)
+```
+
+## Algoritmo
+```{r, message=FALSE}
+data(wine)
+head(wine)
+summary(wine)
+str(wine)
+set.seed(42)
+
+wine$class <- as.factor(wine$class)
+str(wine)
+
+
+tc <- wine[complete.cases(wine),]
+#hacemos la muestra, con 70% de entrenamiento estratificado
+h<-holdout(tc$class,ratio=0.7,mode="stratified")
+data_train<-tc[h$tr,]
+data_test<-tc[h$ts,]
+train_control<- trainControl(method="cv", number=10)
+mod<-train(class~., data=data_train, method="rf", trControl = train_control)
+
+# Create a decision tree model
+mod <- rpart(class~., data=data_train, method = "class",xval= 10)
+
+x_test <- data_test[,2:length(data_test)]
+pred <- predict(mod, newdata=x_test, type="class")
+confusionMatrix(pred,data_test$class)
+# Visualize the decision tree with rpart.plot
+rpart.plot(mod, main = "Árbol de Clasificación")
+
+
+mod<-train(class~., data=data_train, method="knn", trControl = train_control)
+pred <- predict(mod, newdata=data_test)
+confusionMatrix(pred,data_test$class)
+
+#wine$class <- as.numeric(wine$class)
+str(wine)
+
+
+
+boxplot(wine)
+data3=wine[,1:length(wine)-1]
+boxplot(data3)
+data2 = wine[,c(3,5,7,8,9,10,12,13)]
+boxplot(data2)
+
+corr=cor(data2)
+
+# Heatmap 
+ggcorrplot(corr)
+head(pred)
+
+
+
+# Scatter Plot
+ggplot(wine, aes(x=V1, y=class)) + geom_point(col="red",cex =2) 
+
+plot(wine)
+
+
+df=wine
+write.csv(df,'C:/Users/Alumne_mati1/Desktop/wine.csv')
+
+```
+
